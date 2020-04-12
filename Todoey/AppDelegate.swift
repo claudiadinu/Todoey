@@ -17,7 +17,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         print("did finish launching with options")
         
         //locate the plist file that stores the data
-        print(NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).last! as String)
+        //print(NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).last! as String)
         
         return true
     }

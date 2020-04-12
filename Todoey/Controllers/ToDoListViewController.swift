@@ -14,26 +14,33 @@ class ToDoListViewController: UITableViewController {
     var itemArray = [Item]()
     
     let defaults = UserDefaults.standard
+    
+    //path to the document directory
+    //we'll create a new plist at the location of our document file path, instead of using UserDefaults
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
 
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let newItem = Item()
-        newItem.title = "Find Mike"
-        itemArray.append(newItem)
-        let newItem2 = Item()
-        newItem2.title = "Buy Eggs"
-        itemArray.append(newItem2)
-        let newItem3 = Item()
-        newItem3.title = "Play Drawful"
-        itemArray.append(newItem3)
+        print(dataFilePath)
+        
+//        let newItem = Item()
+//        newItem.title = "Find Mike"
+//        itemArray.append(newItem)
+//        let newItem2 = Item()
+//        newItem2.title = "Buy Eggs"
+//        itemArray.append(newItem2)
+//        let newItem3 = Item()
+//        newItem3.title = "Play Drawful"
+//        itemArray.append(newItem3)
         
         //previously we were retrieving an array of Strings
         //retrieve data from itemArray
-        if let items = UserDefaults.standard.array(forKey: "ToDoListArray") as? [Item] {
-            itemArray = items
-        }
+//        if let items = UserDefaults.standard.array(forKey: "ToDoListArray") as? [Item] {
+//            itemArray = items
+//        }
         
+        loadItems() //from Items.plist
     }
     
     //MARK: - TableView DataSource Methods
@@ -75,7 +82,9 @@ class ToDoListViewController: UITableViewController {
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         //sets the done attribute to the opposite - reversing what it used to be
         
-        tableView.reloadData()  // forces the table view to call its data source methods again
+        saveItems()
+        
+        //tableView.reloadData()  // forces the table view to call its data source methods again
         
         //add/remove checkmark whenever a cell is selected
 //        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark {
@@ -105,10 +114,9 @@ class ToDoListViewController: UITableViewController {
             self.itemArray.append(newItem)
             
             //store the array in the user defaults with a given key
-            self.defaults.set(self.itemArray, forKey: "ToDoListArray")
-            
-            //item was added in the array, but the table view needs to be changed
-            self.tableView.reloadData()
+            //this line fails when setting an araay of Items -> crash
+            //self.defaults.set(self.itemArray, forKey: "ToDoListArray")
+            self.saveItems()
         }
         alert.addTextField { (alertTextField) in
             alertTextField.placeholder = "Create new item"
@@ -119,7 +127,36 @@ class ToDoListViewController: UITableViewController {
         present(alert, animated: true, completion: nil)
     }
     
-
+    //MARK: - Model Manipulation Methods
+    
+    func saveItems(){
+        let encoder = PropertyListEncoder()
+        do{
+            let data = try encoder.encode(itemArray)
+            try data.write(to: dataFilePath!)
+        }
+        catch {
+            print("Error encoding itemArray, \(error)")
+        }
+        
+        //item was added in the array, but the table view needs to be changed
+        self.tableView.reloadData()
+    }
+    
+    func loadItems(){
+        //using optional binding to unwrap that safely
+        //added try? because it's trowing
+        if let data = try? Data(contentsOf: dataFilePath!){
+            let decoder = PropertyListDecoder()
+            //decode the data from the file path
+            do{
+                itemArray = try decoder.decode([Item].self, from: data)
+            }
+            catch{
+                print("Error decoding item array, \(error)")
+            }
+        }
+    }
 
 }
 
